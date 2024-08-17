@@ -185,7 +185,7 @@ namespace iAkshar.Controllers
                               {
                                   UserId = user.UserId,
                                   Name = user.Firstname + " " + user.Lastname,
-                                  Type = user.Iskaryakarta == true ? " Karyakarta" : "Yuvak",
+                                  Type = Common.Common.GetYuvakType(user),
                                   Email = user.Emailid,
                                   MobileNo = user.Mobile,
                                   BirthDate = user.BirthDate ?? user.BirthDate.Value
@@ -539,7 +539,7 @@ namespace iAkshar.Controllers
                         Email = x.userData.Emailid,
                         MobileNo = x.userData.Mobile,
                         Name = x.userData.Firstname + " " + x.userData.Lastname,
-                        Type = (x.userData.Iskaryakarta == true ? "Karyakarta" : "Yuvak"),
+                        Type = Common.Common.GetYuvakType(x.userData),
                         UserId = x.userData.UserId
                     }).ToList();
 

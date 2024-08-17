@@ -1,6 +1,10 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Controllers",
+    "\\Dto",
+    "\\Models"
   ],
+  "SelectedNode": "\\Controllers\\ReportController.cs",
   "PreviewInSolutionExplorer": false
 }

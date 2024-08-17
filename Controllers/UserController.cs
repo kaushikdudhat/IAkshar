@@ -130,8 +130,8 @@ namespace iAkshar.Controllers
 
         // PUT: api/User/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(int id, [FromForm] AksharUSerDto userDto, IFormFile profileImage)
+        [HttpPost("ChangeUser/{id}")]
+        public async Task<IActionResult> ChangeUser(int id, [FromForm] AksharUSerDto userDto, IFormFile? profileImage)
         {
 
             var user = _context.Users.FirstOrDefault(x => x.UserId == id);
@@ -161,7 +161,7 @@ namespace iAkshar.Controllers
                 user.Roleid = userDto.Roleid;
                 user.Bloodgroup = userDto.Bloodgroup;
                 user.Sabhaid = userDto.Sabhaid;
-
+                user.ProfileImagePath = await uploadFile(profileImage, id);
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -179,7 +179,7 @@ namespace iAkshar.Controllers
             return NoContent();
         }
 
-        private async Task<string> uploadFile(IFormFile profileImage, int userId)
+        private async Task<string> uploadFile(IFormFile? profileImage, int userId)
         {
             if (profileImage != null && profileImage.Length > 0)
             {
@@ -210,7 +210,7 @@ namespace iAkshar.Controllers
             return "";
         }
 
-        [HttpPut("ChangePassword/{id}")]
+        [HttpPost("ChangePassword/{id}")]
         public async Task<IActionResult> ChangePassword(int id, string currentPassword, string newPassword)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.UserId == id);
@@ -227,7 +227,7 @@ namespace iAkshar.Controllers
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException ex)
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message != null ? ex.Message : ex.InnerException?.Message);
             }
@@ -238,7 +238,7 @@ namespace iAkshar.Controllers
         // POST: api/User
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult> PostUser([FromForm] UserDto user, IFormFile profileImage)
+        public async Task<ActionResult> PostUser([FromForm] UserDto user, IFormFile? profileImage)
         {
             try
             {

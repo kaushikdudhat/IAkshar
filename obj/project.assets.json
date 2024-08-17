@@ -11760,11 +11760,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Devloping\\Preparation\\iAkshar\\iAkshar.csproj",
+      "projectUniqueName": "D:\\Devloping\\Sabha\\IAkshar\\iAkshar.csproj",
       "projectName": "iAkshar",
-      "projectPath": "D:\\Devloping\\Preparation\\iAkshar\\iAkshar.csproj",
+      "projectPath": "D:\\Devloping\\Sabha\\IAkshar\\iAkshar.csproj",
       "packagesPath": "C:\\Users\\Kaushik Dudhat\\.nuget\\packages\\",
-      "outputPath": "D:\\Devloping\\Preparation\\iAkshar\\obj\\",
+      "outputPath": "D:\\Devloping\\Sabha\\IAkshar\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Kaushik Dudhat\\AppData\\Roaming\\NuGet\\NuGet.Config",
