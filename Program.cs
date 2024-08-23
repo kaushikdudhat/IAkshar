@@ -1,10 +1,12 @@
 using iAkshar.Middleware;
 using iAkshar.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Data;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +17,10 @@ builder.Services.AddRazorPages();
 builder.Services.AddControllers();
 builder.Services.AddDbContext<AskharyatraContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("askharyatraContext") ?? throw new InvalidOperationException("Connection string 'askharyatraContext' not found.")));
+
+builder.Services.AddScoped<IDbConnection>(sp =>
+            new SqlConnection(builder.Configuration.GetConnectionString("askharyatraContext")));
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
