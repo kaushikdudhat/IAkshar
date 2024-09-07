@@ -266,7 +266,7 @@ namespace iAkshar.Controllers
                 entity.JoiningDate = DateTime.Now;
                 entity.Followupby = user.Followupby;
                 entity.Referenceby = user.Referenceby;
-                entity.Role = _context.Roles.FirstOrDefault(x => x.Roleid == user.Roleid);
+                entity.Roleid = user.Roleid;
                 entity.Bloodgroup = user.Bloodgroup;
                 entity.Emailid = user.Emailid;
                 entity.Sabhaid = user.Sabhaid;

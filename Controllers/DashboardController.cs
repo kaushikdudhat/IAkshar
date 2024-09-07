@@ -3,6 +3,7 @@ using iAkshar.Dto;
 using iAkshar.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -20,7 +21,7 @@ namespace iAkshar.Controllers
         public DashboardController(AskharyatraContext context, IDbConnection dbConnection)
         {
             _context = context;
-            _dbConnection = dbConnection;   
+            _dbConnection = dbConnection;
         }
 
 
@@ -645,6 +646,29 @@ namespace iAkshar.Controllers
             catch (Exception e)
             {
                 return e.ToString();
+            }
+        }
+
+        [Route("GetUserHierarchyById")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetUserHierarchyById(int userId)
+        {
+            try
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@UserId", userId);
+
+                var result = await _dbConnection.QueryAsync<dynamic>(
+                    "GetYuvakHierarchyByUserId",
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                );
+
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
             }
         }
 
