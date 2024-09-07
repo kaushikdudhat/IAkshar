@@ -263,7 +263,7 @@ namespace iAkshar.Controllers
                 entity.Educationstatus = user.Educationstatus;
                 entity.Maritalstatus = user.Maritalstatus;
                 entity.Iskaryakarta = user.Iskaryakarta;
-
+                entity.JoiningDate = DateTime.Now;
                 entity.Followupby = user.Followupby;
                 entity.Referenceby = user.Referenceby;
                 entity.Role = _context.Roles.FirstOrDefault(x => x.Roleid == user.Roleid);
