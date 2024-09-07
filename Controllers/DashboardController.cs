@@ -1,8 +1,10 @@
-﻿using iAkshar.Dto;
+﻿using Dapper;
+using iAkshar.Dto;
 using iAkshar.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace iAkshar.Controllers
@@ -13,10 +15,12 @@ namespace iAkshar.Controllers
     public class DashboardController : ControllerBase
     {
         private readonly AskharyatraContext _context;
+        private readonly IDbConnection _dbConnection;
 
-        public DashboardController(AskharyatraContext context)
+        public DashboardController(AskharyatraContext context, IDbConnection dbConnection)
         {
             _context = context;
+            _dbConnection = dbConnection;   
         }
 
 
@@ -27,23 +31,34 @@ namespace iAkshar.Controllers
             try
             {
 
-                DateTime today = DateTime.UtcNow.Date; // Use DateTime.Now.Date if you want local time
-                DateTime tomorrow = today.AddDays(1);
-                DateTime startOfWeek = today.AddDays((-(int)today.DayOfWeek) + 1);
-                DateTime endOfWeek = startOfWeek.AddDays(6);
-                int currentMonth = today.Month;
+                //DateTime today = DateTime.UtcNow.Date; // Use DateTime.Now.Date if you want local time
+                //DateTime tomorrow = today.AddDays(1);
+                //DateTime startOfWeek = today.AddDays((-(int)today.DayOfWeek) + 1);
+                //DateTime endOfWeek = startOfWeek.AddDays(6);
+                //int currentMonth = today.Month;
 
-                IQueryable<AksharUser> query = await getRoleWiseYuvak(sabhaId, userId);
+                //IQueryable<AksharUser> query = await getRoleWiseYuvak(sabhaId, userId);
 
-                query = query.Where(x => x.BirthDate != null);
-                var todayBirthdays = query.Where(p => p.BirthDate.Value.Month == today.Month && p.BirthDate.Value.Day == today.Day).Count();
-                var tomorrowBirthdays = query.Where(p => p.BirthDate.Value.Month == tomorrow.Month && p.BirthDate.Value.Day == tomorrow.Day).Count();
-                var weekBirthdays = query.Where(p => (p.BirthDate.Value.Month == startOfWeek.Month && p.BirthDate.Value.Day >= startOfWeek.Day && p.BirthDate.Value.Day <= endOfWeek.Day)
-                             || (p.BirthDate.Value.Month == endOfWeek.Month && p.BirthDate.Value.Day >= startOfWeek.Day && p.BirthDate.Value.Day <= endOfWeek.Day)).Count();
-                var monthBirthdays = query.Where(p => p.BirthDate.Value.Month == currentMonth).Count();
+                //query = query.Where(x => x.BirthDate != null);
+                //var todayBirthdays = query.Where(p => p.BirthDate.Value.Month == today.Month && p.BirthDate.Value.Day == today.Day).Count();
+                //var tomorrowBirthdays = query.Where(p => p.BirthDate.Value.Month == tomorrow.Month && p.BirthDate.Value.Day == tomorrow.Day).Count();
+                //var weekBirthdays = query.Where(p => (p.BirthDate.Value.Month == startOfWeek.Month && p.BirthDate.Value.Day >= startOfWeek.Day && p.BirthDate.Value.Day <= endOfWeek.Day)
+                //             || (p.BirthDate.Value.Month == endOfWeek.Month && p.BirthDate.Value.Day >= startOfWeek.Day && p.BirthDate.Value.Day <= endOfWeek.Day)).Count();
+                //var monthBirthdays = query.Where(p => p.BirthDate.Value.Month == currentMonth).Count();
 
-                var data = new BirthDayCountDto() { Today = todayBirthdays, Tomorrow = tomorrowBirthdays, Week = weekBirthdays, Month = monthBirthdays };
-                return Ok(data);
+                //var data = new BirthDayCountDto() { Today = todayBirthdays, Tomorrow = tomorrowBirthdays, Week = weekBirthdays, Month = monthBirthdays };
+                //return Ok(data);
+                var parameters = new DynamicParameters();
+                parameters.Add("@SabhaId", sabhaId);
+                parameters.Add("@UserId", userId);
+
+                var result = await _dbConnection.QueryFirstOrDefaultAsync<BirthDayCountDto>(
+                    "GetBirthdayCounts",
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                );
+
+                return result;
 
             }
             catch (Exception e)
