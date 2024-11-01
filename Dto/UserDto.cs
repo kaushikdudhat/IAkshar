@@ -42,4 +42,9 @@
         public string? Emailid { get; set; }
         public int? Sabhaid { get; set; }
     }
+
+    public class SuggessionDto
+    {
+        public string Suggestion { get; set; }
+    }
 }

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iAkshar.Models;
 using iAkshar.Dto;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace iAkshar.Controllers
 {
@@ -23,24 +24,24 @@ namespace iAkshar.Controllers
 
         // GET: api/Sabha
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Sabha>>> GetSabhas()
+        public async Task<ActionResult<object>> GetSabhas()
         {
-          if (_context.Sabhas == null)
-          {
-              return NotFound();
-          }
-            var sabhas =  await _context.Sabhas.ToListAsync();
-            return sabhas;
+            if (_context.Sabhas == null)
+            {
+                return Common.Common.GenerateError("Sabha Not Found");
+            }
+            var sabhas = await _context.Sabhas.ToListAsync();
+            return Common.Common.GenerateSuccResponse(sabhas);
         }
 
         // GET: api/Sabha/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Sabha>> GetSabha(int id)
         {
-          if (_context.Sabhas == null)
-          {
-              return NotFound();
-          }
+            if (_context.Sabhas == null)
+            {
+                return NotFound();
+            }
             var sabha = await _context.Sabhas.FindAsync(id);
             if (sabha == null)
             {
@@ -86,10 +87,10 @@ namespace iAkshar.Controllers
         [HttpPost]
         public async Task<ActionResult> PostSabha(SabhaDto sabha)
         {
-          if (_context.Sabhas == null)
-          {
-              return Problem("Entity set 'AskharyatraContext.Sabhas'  is null.");
-          }
+            if (_context.Sabhas == null)
+            {
+                return Problem("Entity set 'AskharyatraContext.Sabhas'  is null.");
+            }
             Sabha entity = new Sabha();
             entity.Sabhatime = sabha.Sabhatime;
             entity.Sabhaday = sabha.Sabhaday;

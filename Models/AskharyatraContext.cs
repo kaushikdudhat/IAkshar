@@ -32,6 +32,8 @@ public partial class AskharyatraContext : DbContext
 
     public virtual DbSet<SabhaType> SabhaTypes { get; set; }
 
+    public virtual DbSet<Suggestions> Suggestions { get; set; }
+
     public virtual DbSet<AksharUser> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

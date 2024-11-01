@@ -23,13 +23,14 @@ namespace iAkshar.Controllers
 
         // GET: api/Role
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Role>>> GetRoles()
+        public async Task<ActionResult<object>> GetRoles()
         {
           if (_context.Roles == null)
           {
-              return NotFound();
-          }
-            return await _context.Roles.ToListAsync();
+                return Common.Common.GenerateError("Pradesh Not Found");
+            }
+            var result = await _context.Roles.ToListAsync();
+            return Common.Common.GenerateSuccResponse(result);
         }
 
         // GET: api/Role/5

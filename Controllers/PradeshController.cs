@@ -23,13 +23,14 @@ namespace iAkshar.Controllers
 
         // GET: api/Pradesh
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Pradesh>>> GetPradeshes()
+        public async Task<ActionResult<object>> GetPradeshes()
         {
           if (_context.Pradeshes == null)
           {
-              return NotFound();
-          }
-            return await _context.Pradeshes.ToListAsync();
+                return Common.Common.GenerateError("Pradesh Not Found");
+            }
+            var result = await _context.Pradeshes.ToListAsync();
+            return Common.Common.GenerateSuccResponse(result);
         }
 
         // GET: api/Pradesh/5

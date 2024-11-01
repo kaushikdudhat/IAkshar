@@ -12,6 +12,7 @@ using iAkshar.Common;
 using Dapper;
 using System.Data;
 using Microsoft.Data.SqlClient;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace iAkshar.Controllers
 {
@@ -80,11 +81,36 @@ namespace iAkshar.Controllers
                 var parameters = new { UserId = userId };
                 var result = await _dbConnection.QueryAsync<WeeklySabhaDto>("GetWeeklySabhaData", parameters, commandType: CommandType.StoredProcedure);
 
-                return result.ToList();
+                return Common.Common.GenerateSuccResponse(result.ToList());
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.ToString());
+            }
+        }
+
+        [Route("GetLast4SabhaDetail/{userId}")]
+        [HttpGet]
+        public async Task<ActionResult<object>> GetLast4SabhaDetail(int userId)
+        {
+            try
+            {
+                var data = await (from u in _context.Users
+                                  join st in _context.SabhaTracks on u.Sabhaid equals st.Sabhaid
+                                  join a in _context.Attendences on st.Sabhatrackid equals a.Sabhatrackid
+                                  where u.UserId == 13447 && a.Userid == 13447
+                                  select new
+                                  {
+                                      YuvakId = u.UserId,
+                                      IsPresent = a.Ispresent,
+                                      Date = st.Date
+                                  }).ToListAsync();
+
+                return Common.Common.GenerateSuccResponse(data);
+            }
+            catch (Exception e)
+            {
+                return Common.Common.GenerateError(e.ToString());
             }
         }
 
@@ -154,11 +180,11 @@ namespace iAkshar.Controllers
                 var parameters = new { UserId = userId, SabhaTrackId = sabhaTrackId };
                 var result = await _dbConnection.QueryAsync<YuvakAttendenceDto>("GetYuvakAttendanceData", parameters, commandType: CommandType.StoredProcedure);
 
-                return result.ToList();
+                return Common.Common.GenerateSuccResponse(result.ToList());
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.ToString());
             }
         }
 
@@ -199,11 +225,11 @@ namespace iAkshar.Controllers
                 var parameters = new DynamicParameters();
                 parameters.Add("@YuvakAttendenceDtos", table.AsTableValuedParameter("YuvakAttendenceDtoTableType"));
                 await _dbConnection.ExecuteAsync("UpdateYuvakAttendance", parameters, commandType: CommandType.StoredProcedure);
-                return Ok(yuvakAttendenceDtoList);
+                return Ok(Common.Common.GenerateSuccResponse(yuvakAttendenceDtoList));
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.ToString());
             }
 
         }
@@ -224,27 +250,33 @@ namespace iAkshar.Controllers
                     SabhaTrack entity = new SabhaTrack();
                     entity.Sabhaid = sabha.Sabhaid;
                     entity.Topic = "HariPrabodham " + sabha.Sabhaname;
-                    var sabhaDate = result.FirstOrDefault(x => x.Day == sabha.Sabhaday);
+                    var sabhaDate = result.FirstOrDefault(x => x.Day.ToLower().Trim() == sabha.Sabhaday.ToLower().Trim());
                     entity.Date = sabhaDate?.Date;
-                    _context.SabhaTracks.Add(entity);
-                    await _context.SaveChangesAsync();
+                    entity.CreatedDate = DateTime.Now;
 
-                    var users = _context.Users.Where(x => x.Sabhaid == sabha.Sabhaid).ToList();
-                    foreach (var user in users)
+                    if (!_context.SabhaTracks.Where(x => x.Sabhaid == sabha.Sabhaid && x.Date == entity.Date).Any())
                     {
-                        Attendence attendence = new Attendence();
-                        attendence.Sabhatrackid = entity.Sabhatrackid;
-                        attendence.Userid = user.UserId;
-                        attendence.Ispresent = false;
-                        _context.Attendences.Add(attendence);
+                        _context.SabhaTracks.Add(entity);
+                        await _context.SaveChangesAsync();
+
+                        var users = _context.Users.Where(x => x.Sabhaid == sabha.Sabhaid).ToList();
+                        foreach (var user in users)
+                        {
+                            Attendence attendence = new Attendence();
+                            attendence.Sabhatrackid = entity.Sabhatrackid;
+                            attendence.Userid = user.UserId;
+                            attendence.Ispresent = false;
+                            _context.Attendences.Add(attendence);
+                        }
+                        await _context.SaveChangesAsync();
                     }
-                    await _context.SaveChangesAsync();
                 }
-                return "Current Week Sabha Inserted.";
+
+                return Common.Common.GenerateSuccResponse(null, "Current Week Sabha Inserted.");
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.ToString());
             }
         }
     }

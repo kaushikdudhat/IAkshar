@@ -18,7 +18,7 @@ namespace iAkshar.Controllers
         public EventController(AskharyatraContext context, IDbConnection dbConnection)
         {
             _context = context;
-            _dbConnection = dbConnection;   
+            _dbConnection = dbConnection;
         }
 
         //public async Task<ActionResult<object>> GetSabhaListByDate(string inputdateTime)
@@ -53,7 +53,7 @@ namespace iAkshar.Controllers
         //}
         [Route("getsabhalistbydate")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<WeeklyEventDto>>> GetSabhaListByDate(string inputdateTime)
+        public async Task<ActionResult<object>> GetSabhaListByDate(string inputdateTime)
         {
             try
             {
@@ -71,12 +71,13 @@ namespace iAkshar.Controllers
                     commandType: CommandType.StoredProcedure);
 
                 // Return the result as a list
-                return Ok(result);
+             
+                return Common.Common.GenerateSuccResponse(result);
             }
             catch (Exception e)
             {
                 // Return the exception details in case of an error
-                return BadRequest(e.ToString());
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
@@ -182,7 +183,7 @@ namespace iAkshar.Controllers
         //}
         [Route("getyuvaklistbysabhaid/{userId}")]
         [HttpGet]
-        public async Task<ActionResult<List<EventYuvakDto>>> GetYuvakListBySabhaId(int userId, int sabhaId)
+        public async Task<ActionResult<object>> GetYuvakListBySabhaId(int userId, int sabhaId)
         {
             try
             {
@@ -201,11 +202,11 @@ namespace iAkshar.Controllers
                     commandType: CommandType.StoredProcedure
                 )).ToList();
 
-                return yuvakList;
+                return Common.Common.GenerateSuccResponse(yuvakList);
             }
             catch (Exception e)
             {
-                return BadRequest(e.ToString());
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
@@ -264,7 +265,7 @@ namespace iAkshar.Controllers
         //}
         [Route("getyuvakbyid")]
         [HttpGet]
-        public async Task<ActionResult<YuvakDto>> GetYuvakById(int yuvakId)
+        public async Task<ActionResult<object>> GetYuvakById(int yuvakId)
         {
             try
             {
@@ -278,16 +279,66 @@ namespace iAkshar.Controllers
                     commandType: CommandType.StoredProcedure
                 );
 
-                return query != null ? Ok(query) : NotFound();
+                return Common.Common.GenerateSuccResponse(query);
             }
             catch (Exception e)
             {
                 // Handle exception
-                return StatusCode(500, e.Message);
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
+        [Route("GetYuvakByFolloupId")]
+        [HttpGet]
+        public async Task<ActionResult<object>> GetYuvakByFolloupId(int followupById)
+        {
+            try
+            {
+                // Assuming _dbConnection is your existing DbConnection object
+                var parameters = new DynamicParameters();
+                parameters.Add("@followupById", followupById);
 
+                var query = await _dbConnection.QueryAsync<YuvakDto>(
+                    "GetYuvakListByFollowupBy",
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                );
+
+                //return query != null ? Ok(query) : NotFound();
+                return Common.Common.GenerateSuccResponse(query);
+            }
+            catch (Exception e)
+            {
+                // Handle exception
+                return Common.Common.GenerateError(e.Message);
+            }
+        }
+
+        [Route("GetYuvakList")]
+        [HttpGet]
+        public async Task<ActionResult<object>> GetYuvakList(int followupById, int sabhaId, bool IsMarried, bool isAttending,bool isIrregular, bool isKaryakarta, bool IsAmbrish)
+        {
+            try
+            {
+                // Assuming _dbConnection is your existing DbConnection object
+                var parameters = new DynamicParameters();
+                parameters.Add("@followupById", followupById);
+
+                var query = await _dbConnection.QueryAsync<YuvakDto>(
+                    "GetYuvakListByFollowupBy",
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                );
+
+                //return query != null ? Ok(query) : NotFound();
+                return Common.Common.GenerateSuccResponse(query);
+            }
+            catch (Exception e)
+            {
+                // Handle exception
+                return Common.Common.GenerateError(e.Message);
+            }
+        }
 
     }
 }

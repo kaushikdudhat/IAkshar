@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iAkshar.Models;
 using iAkshar.Dto;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace iAkshar.Controllers
 {
@@ -23,13 +24,14 @@ namespace iAkshar.Controllers
 
         // GET: api/SabhaType
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<SabhaType>>> GetSabhaTypes()
+        public async Task<ActionResult<object>> GetSabhaTypes()
         {
           if (_context.SabhaTypes == null)
           {
-              return NotFound();
-          }
-            return await _context.SabhaTypes.ToListAsync();
+              return Common.Common.GenerateError("SabhaTypes Not Found");
+            }
+            var result = await _context.SabhaTypes.ToListAsync();
+            return Common.Common.GenerateSuccResponse(result);
         }
 
         // GET: api/SabhaType/5

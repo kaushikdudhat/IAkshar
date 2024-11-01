@@ -27,44 +27,44 @@ namespace iAkshar.Controllers
 
         [Route("getBirthdayCount")]
         [HttpGet]
-        public async Task<ActionResult<BirthDayCountDto>> getBirthdayCount(int sabhaId, int userId)
+        public async Task<ActionResult<object>> getBirthdayCount(int sabhaId, int userId)
         {
             try
             {
 
-                //DateTime today = DateTime.UtcNow.Date; // Use DateTime.Now.Date if you want local time
-                //DateTime tomorrow = today.AddDays(1);
-                //DateTime startOfWeek = today.AddDays((-(int)today.DayOfWeek) + 1);
-                //DateTime endOfWeek = startOfWeek.AddDays(6);
-                //int currentMonth = today.Month;
+                DateTime today = DateTime.UtcNow.Date; // Use DateTime.Now.Date if you want local time
+                DateTime tomorrow = today.AddDays(1);
+                DateTime startOfWeek = today.AddDays((-(int)today.DayOfWeek) + 1);
+                DateTime endOfWeek = startOfWeek.AddDays(6);
+                int currentMonth = today.Month;
 
-                //IQueryable<AksharUser> query = await getRoleWiseYuvak(sabhaId, userId);
+                IQueryable<AksharUser> query = await getRoleWiseYuvak(sabhaId, userId);
 
-                //query = query.Where(x => x.BirthDate != null);
-                //var todayBirthdays = query.Where(p => p.BirthDate.Value.Month == today.Month && p.BirthDate.Value.Day == today.Day).Count();
-                //var tomorrowBirthdays = query.Where(p => p.BirthDate.Value.Month == tomorrow.Month && p.BirthDate.Value.Day == tomorrow.Day).Count();
-                //var weekBirthdays = query.Where(p => (p.BirthDate.Value.Month == startOfWeek.Month && p.BirthDate.Value.Day >= startOfWeek.Day && p.BirthDate.Value.Day <= endOfWeek.Day)
-                //             || (p.BirthDate.Value.Month == endOfWeek.Month && p.BirthDate.Value.Day >= startOfWeek.Day && p.BirthDate.Value.Day <= endOfWeek.Day)).Count();
-                //var monthBirthdays = query.Where(p => p.BirthDate.Value.Month == currentMonth).Count();
+                query = query.Where(x => x.BirthDate != null);
+                var todayBirthdays = query.Where(p => p.BirthDate.Value.Month == today.Month && p.BirthDate.Value.Day == today.Day).Count();
+                var tomorrowBirthdays = query.Where(p => p.BirthDate.Value.Month == tomorrow.Month && p.BirthDate.Value.Day == tomorrow.Day).Count();
+                var weekBirthdays = query.Where(p => (p.BirthDate.Value.Month == startOfWeek.Month && p.BirthDate.Value.Day >= startOfWeek.Day && p.BirthDate.Value.Day <= endOfWeek.Day)
+                             || (p.BirthDate.Value.Month == endOfWeek.Month && p.BirthDate.Value.Day >= startOfWeek.Day && p.BirthDate.Value.Day <= endOfWeek.Day)).Count();
+                var monthBirthdays = query.Where(p => p.BirthDate.Value.Month == currentMonth).Count();
 
-                //var data = new BirthDayCountDto() { Today = todayBirthdays, Tomorrow = tomorrowBirthdays, Week = weekBirthdays, Month = monthBirthdays };
-                //return Ok(data);
-                var parameters = new DynamicParameters();
-                parameters.Add("@SabhaId", sabhaId);
-                parameters.Add("@UserId", userId);
+                var data = new BirthDayCountDto() { Today = todayBirthdays, Tomorrow = tomorrowBirthdays, Week = weekBirthdays, Month = monthBirthdays };
+                return Common.Common.GenerateSuccResponse(data);
+                //var parameters = new DynamicParameters();
+                //parameters.Add("@SabhaId", sabhaId);
+                //parameters.Add("@UserId", userId);
 
-                var result = await _dbConnection.QueryFirstOrDefaultAsync<BirthDayCountDto>(
-                    "GetBirthdayCounts",
-                    parameters,
-                    commandType: CommandType.StoredProcedure
-                );
+                //var result = await _dbConnection.QueryFirstOrDefaultAsync<BirthDayCountDto>(
+                //    "GetBirthdayCounts",
+                //    parameters,
+                //    commandType: CommandType.StoredProcedure
+                //);
 
-                return result;
+                //return result;
 
             }
             catch (Exception e)
             {
-                return StatusCode(500, e.Message);
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
@@ -80,7 +80,7 @@ namespace iAkshar.Controllers
                     case CommonEnum.Role.Karyakarta:
                         query = from yuvak in query
                                 where yuvak.Sabhaid == sabhaId &&
-                                      yuvak.Referenceby == userId
+                                      yuvak.Followupby == userId
                                 select yuvak;
                         break;
                     case CommonEnum.Role.Leader:
@@ -186,15 +186,15 @@ namespace iAkshar.Controllers
                         query = query.Where(p => p.BirthDate.Value.Month == tomorrow.Month && p.BirthDate.Value.Day == tomorrow.Day);
                         break;
                     case "Week":
-                        query = query.Where(p => (p.BirthDate.Value.Month == startOfWeek.Month && p.BirthDate.Value.Day >= startOfWeek.Day)
-                        || (p.BirthDate.Value.Month == endOfWeek.Month && p.BirthDate.Value.Day <= endOfWeek.Day));
+                        query = query.Where(p => p.BirthDate.Value.Month == startOfWeek.Month && p.BirthDate.Value.Day >= startOfWeek.Day
+                        && p.BirthDate.Value.Day <= endOfWeek.Day);
                         break;
                     case "Month":
                         query = query.Where(p => p.BirthDate.Value.Month == currentMonth);
                         break;
                 }
 
-                return await (from user in query
+                var res= await (from user in query
                               join sabha in _context.Sabhas
                               on user.Sabhaid equals sabha.Sabhaid
                               select new UserDetailDto
@@ -204,12 +204,16 @@ namespace iAkshar.Controllers
                                   Type = Common.Common.GetYuvakType(user),
                                   Email = user.Emailid,
                                   MobileNo = user.Mobile,
-                                  BirthDate = user.BirthDate ?? user.BirthDate.Value
+                                  BirthDate = user.BirthDate ?? user.BirthDate.Value,
+                                  ProfileImagePath = user.ProfileImagePath,
+                                  Sabha = sabha.Sabhaname
                               }).ToListAsync();
+
+                return Common.Common.GenerateSuccResponse(res.ToList());
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
@@ -229,11 +233,13 @@ namespace iAkshar.Controllers
                 var todayCount = _context.SabhaTracks.Where(p => p.Date != null && p.Date.Value.Month == today.Month && p.Date.Value.Day == today.Day).Count();
                 var tomorrowCount = _context.SabhaTracks.Where(p => p.Date != null && p.Date.Value.Month == tomorrow.Month && p.Date.Value.Day == tomorrow.Day).Count();
 
-                return new BirthDayCountDto() { Today = todayCount, Tomorrow = tomorrowCount };
+                var res = new BirthDayCountDto() { Today = todayCount, Tomorrow = tomorrowCount };
+
+                return Common.Common.GenerateSuccResponse(res);
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
@@ -270,7 +276,7 @@ namespace iAkshar.Controllers
                         break;
                 }
 
-                return (from st in query
+                var res = (from st in query
                             //join sabha in _context.Sabhas
                             //on st.Sabhaid equals sabha.Sabhaid
                         select new SabhaDashDto
@@ -285,10 +291,12 @@ namespace iAkshar.Controllers
                             Sabhatime = st.Sabha.Sabhatime,
                             Sabhatype = st.Sabha.Sabhatype?.Sabhatype1,
                         }).ToList();
+
+                return Common.Common.GenerateSuccResponse(res);
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
@@ -316,11 +324,13 @@ namespace iAkshar.Controllers
                 var weekCount = query.Where(p => p.JoiningDate >= startOfWeek && p.JoiningDate <= endOfWeek).Count();
                 var monthCount = query.Where(p => p.JoiningDate >= firstDayOfMonth && p.JoiningDate <= lastDayOfMonth).Count();
 
-                return new BirthDayCountDto() { Today = todayCount, Tomorrow = tomorrowCount, Week = weekCount, Month = monthCount };
+                var res = new BirthDayCountDto() { Today = todayCount, Tomorrow = tomorrowCount, Week = weekCount, Month = monthCount };
+
+                return Common.Common.GenerateSuccResponse(res);
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
@@ -350,7 +360,7 @@ namespace iAkshar.Controllers
                         query = query.Where(p => p.JoiningDate.Value.Month == tomorrow.Month && p.JoiningDate.Value.Day == tomorrow.Day);
                         break;
                     case "Week":
-                        query = query.Where(p => p.JoiningDate.Value.Month == today.Month && p.JoiningDate.Value.Day == today.Day);
+                        query = query.Where(p => p.JoiningDate >= startOfWeek && p.JoiningDate <= endOfWeek);
                         break;
                     case "Month":
                         query = query.Where(p => p.JoiningDate >= firstDayOfMonth && p.JoiningDate <= lastDayOfMonth);
@@ -360,7 +370,7 @@ namespace iAkshar.Controllers
                         break;
                 }
 
-                return await (from user in query
+                var res = await (from user in query
                               join sabha in _context.Sabhas
                               on user.Sabhaid equals sabha.Sabhaid
                               select new UserDetailDto
@@ -370,12 +380,14 @@ namespace iAkshar.Controllers
                                   Type = Common.Common.GetYuvakType(user),
                                   Email = user.Emailid,
                                   MobileNo = user.Mobile,
-                                  BirthDate = user.BirthDate
+                                  BirthDate = user.BirthDate,
+                                  ProfileImagePath = user.ProfileImagePath
                               }).ToListAsync();
+                return Common.Common.GenerateSuccResponse(res);
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
@@ -426,15 +438,16 @@ namespace iAkshar.Controllers
                                                     Name = q.Firstname + " " + q.Lastname,
                                                     Type = Common.Common.GetYuvakType(user),
                                                     Email = q.Emailid,
-                                                    MobileNo = q.Mobile
+                                                    MobileNo = q.Mobile,
+                                                    ProfileImagePath = q.ProfileImagePath
                                                 })
                                                 .ToListAsync();
 
-                return userDetails;
+                return Common.Common.GenerateSuccResponse(userDetails);
             }
             catch (Exception e)
             {
-                return StatusCode(500, e.ToString());
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
@@ -481,11 +494,12 @@ namespace iAkshar.Controllers
                                        //group au by new { au.UserId, au.Sabhaid } into grouped
                                        select att.Userid).Distinct().CountAsync();
 
-                return new AttendenceCountDto { Week = weekCount, Month = monthCount, year = yearCount };
+                var res = new AttendenceCountDto { Week = weekCount, Month = monthCount, year = yearCount };
+                return Common.Common.GenerateSuccResponse(res);
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
@@ -550,23 +564,23 @@ namespace iAkshar.Controllers
                 {
                     var data = absentData.Where(x => x.AbsentCount >= fromCount && x.AbsentCount <= toCount).ToList();
 
-                    return data.Select(x => new UserDetailDto
+                    var res = data.Select(x => new UserDetailDto
                     {
                         Email = x.userData.Emailid,
                         MobileNo = x.userData.Mobile,
                         Name = x.userData.Firstname + " " + x.userData.Lastname,
                         Type = Common.Common.GetYuvakType(x.userData),
-                        UserId = x.userData.UserId
+                        UserId = x.userData.UserId,
+                        ProfileImagePath = x.userData.ProfileImagePath
                     }).ToList();
-
+                    return Common.Common.GenerateSuccResponse(res);
                 }
 
-
-                return new UserDetailDto();
+                return Common.Common.GenerateSuccResponse(new UserDetailDto());
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
@@ -636,22 +650,24 @@ namespace iAkshar.Controllers
                                       AbsentCount = g.Count()
                                   }).ToList();
 
-                return new AbsenceCountDto
+                return Common.Common.GenerateSuccResponse(new AbsenceCountDto
                 {
                     A1_10 = absentData.Where(x => x.AbsentCount >= 1 && x.AbsentCount <= 10).Count(),
                     A11_20 = absentData.Where(x => x.AbsentCount >= 11 && x.AbsentCount <= 20).Count(),
                     A21_30 = absentData.Where(x => x.AbsentCount >= 21 && x.AbsentCount <= 30).Count()
-                };
+                });
+
+
             }
             catch (Exception e)
             {
-                return e.ToString();
+                return Common.Common.GenerateError(e.Message);
             }
         }
 
         [Route("GetUserHierarchyById")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<dynamic>>> GetUserHierarchyById(int userId)
+        public async Task<ActionResult<object>> GetUserHierarchyById(int userId)
         {
             try
             {
@@ -664,11 +680,11 @@ namespace iAkshar.Controllers
                     commandType: CommandType.StoredProcedure
                 );
 
-                return Ok(result);
+                return Common.Common.GenerateSuccResponse(result);
             }
             catch (Exception e)
             {
-                return StatusCode(500, e.Message);
+                return Common.Common.GenerateError(e.Message);
             }
         }
 

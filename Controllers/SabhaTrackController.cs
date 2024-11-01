@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iAkshar.Models;
 using iAkshar.Dto;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace iAkshar.Controllers
 {
@@ -23,78 +20,64 @@ namespace iAkshar.Controllers
 
         // GET: api/SabhaTrack
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<SabhaTrack>>> GetSabhaTracks()
+        public async Task<ActionResult<object>> GetSabhaTracks()
         {
-          if (_context.SabhaTracks == null)
-          {
-              return NotFound();
-          }
-            return await _context.SabhaTracks.ToListAsync();
+            if (_context.SabhaTracks == null)
+            {
+                return Common.Common.GenerateError();
+            }
+            var result = await _context.SabhaTracks.ToListAsync();
+            return Common.Common.GenerateSuccResponse(result);
         }
 
         // GET: api/SabhaTrack/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<SabhaTrack>> GetSabhaTrack(int id)
+        public async Task<ActionResult<object>> GetSabhaTrack(int id)
         {
-          if (_context.SabhaTracks == null)
-          {
-              return NotFound();
-          }
+            if (_context.SabhaTracks == null)
+            {
+                return Common.Common.GenerateError();
+            }
             var sabhaTrack = await _context.SabhaTracks.FindAsync(id);
 
             if (sabhaTrack == null)
             {
-                return NotFound();
+                return Common.Common.GenerateError();
             }
 
-            return sabhaTrack;
+            return Common.Common.GenerateSuccResponse(sabhaTrack);
         }
 
         // PUT: api/SabhaTrack/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutSabhaTrack(int id, SabhaTrack sabhaTrack)
+        public async Task<object> PutSabhaTrack(int id, SabhaTrack sabhaTrack)
         {
-            if (id != sabhaTrack.Sabhatrackid)
-            {
-                return BadRequest();
-            }
-
             _context.Entry(sabhaTrack).State = EntityState.Modified;
 
             try
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!SabhaTrackExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return Common.Common.GenerateError(ex.Message);
             }
 
-            return NoContent();
+            return Common.Common.GenerateSuccResponse(null, "Updated Successfully");
         }
 
         // POST: api/SabhaTrack
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult> PostSabhaTrack(SabhaTrackDto sabhaTrack)
+        public async Task<object> PostSabhaTrack(SabhaTrackDto sabhaTrack)
         {
-          if (_context.SabhaTracks == null)
-          {
-              return Problem("Entity set 'AskharyatraContext.SabhaTracks'  is null.");
-          }
+           
 
             SabhaTrack entity = new SabhaTrack();
             entity.Sabhaid = sabhaTrack.Sabhaid;
-            entity.Topic= sabhaTrack.Topic; 
-            entity.Date= sabhaTrack.Date;
+            entity.Topic = sabhaTrack.Topic;
+            entity.Date = sabhaTrack.Date;
             _context.SabhaTracks.Add(entity);
             await _context.SaveChangesAsync();
 
@@ -103,32 +86,29 @@ namespace iAkshar.Controllers
             {
                 Attendence attendence = new Attendence();
                 attendence.Sabhatrackid = entity.Sabhatrackid;
-                attendence.Userid= user.UserId;
+                attendence.Userid = user.UserId;
                 attendence.Ispresent = false;
                 _context.Attendences.Add(attendence);
             }
             await _context.SaveChangesAsync();
-            return Ok("SabhaTrack Inserted.");
+            return Common.Common.GenerateSuccResponse(null, "SabhaTrack Inserted");
         }
 
         // DELETE: api/SabhaTrack/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteSabhaTrack(int id)
+        public async Task<object> DeleteSabhaTrack(int id)
         {
-            if (_context.SabhaTracks == null)
-            {
-                return NotFound();
-            }
+            
             var sabhaTrack = await _context.SabhaTracks.FindAsync(id);
             if (sabhaTrack == null)
             {
-                return NotFound();
+                return Common.Common.GenerateError("Sabha Track not found");
             }
 
             _context.SabhaTracks.Remove(sabhaTrack);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Common.Common.GenerateSuccResponse(null, "SabhaTrack deleted");
         }
 
         private bool SabhaTrackExists(int id)

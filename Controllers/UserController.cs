@@ -5,6 +5,8 @@ using iAkshar.Dto;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http.HttpResults;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace iAkshar.Controllers
 {
@@ -33,6 +35,7 @@ namespace iAkshar.Controllers
                     return NotFound();
                 }
                 return await _context.Users.ToListAsync();
+
             }
             catch (Exception ex)
             {
@@ -47,13 +50,15 @@ namespace iAkshar.Controllers
             {
                 if (_context.Users == null)
                 {
-                    return NotFound();
+                    return Common.Common.GenerateError("Users Not Found");
                 }
-                return await _context.Users.Where(x => x.Sabhaid == sabhaId && x.Iskaryakarta==true).Select(x => new
+                var data =  await _context.Users.Where(x => x.Sabhaid == sabhaId && x.Iskaryakarta==true).Select(x => new
                 {
                     Id = x.UserId,
                     Name = x.Firstname + " " + (!string.IsNullOrEmpty(x.Middlename) ? x.Middlename[0] : "") + " " + x.Lastname
                 }).ToListAsync();
+
+                return Common.Common.GenerateSuccResponse(data);
             }
             catch (Exception ex)
             {
@@ -62,19 +67,21 @@ namespace iAkshar.Controllers
         }
 
         [HttpGet("Login")]
-        public async Task<ActionResult> Login(string Username, string password)
+        public async Task<object> Login(string Username, string password)
         {
 
             var tokenString = string.Empty;
-            if (_context.Users == null)
-            {
-                return NotFound();
-            }
+           
             try
             {
 
 
                 var user = _context.Users.FirstOrDefault(x => x.Mobile == Username && x.Password == password);
+
+                if (user == null)
+                {
+                    return Common.Common.GenerateError("User Not Found");
+                }
                 //    if (user != null)
                 //    {
                 //        var tokenHandler = new JwtSecurityTokenHandler();
@@ -92,31 +99,31 @@ namespace iAkshar.Controllers
                 //        var token = tokenHandler.CreateToken(tokenDescriptor);
                 //        tokenString = tokenHandler.WriteToken(token);
                 //    }
-                return Ok(user);
+                return Common.Common.GenerateSuccResponse(user);
             }
             catch (Exception ex)
             {
 
-                throw ex;
+                return Common.Common.GenerateError(ex.Message);
             }
         }
 
         // GET: api/User/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<AksharUser>> GetUser(int id)
+        public async Task<ActionResult<object>> GetUser(int id)
         {
             //try
             //{
                 if (_context.Users == null)
                 {
-                    return NotFound();
-                }
+                return Common.Common.GenerateError("User Not Found");
+            }
                 var user = await _context.Users.FindAsync(id);
 
                 if (user == null)
                 {
-                    return NotFound();
-                }
+                return Common.Common.GenerateError("User Not Found");
+            }
 
             //}
             //catch (Exception ex)
@@ -125,19 +132,19 @@ namespace iAkshar.Controllers
             //    return new AksharUser();
             //}
 
-            return user;
+            return Common.Common.GenerateSuccResponse(user);
         }
 
         // PUT: api/User/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost("ChangeUser/{id}")]
-        public async Task<IActionResult> ChangeUser(int id, [FromForm] AksharUSerDto userDto, IFormFile? profileImage)
+        public async Task<object> ChangeUser(int id, [FromForm] AksharUSerDto userDto, IFormFile? profileImage)
         {
 
             var user = _context.Users.FirstOrDefault(x => x.UserId == id);
             if (user == null)
             {
-                return BadRequest();
+                return Common.Common.GenerateError("User Not Found");
             }
 
             try
@@ -168,15 +175,15 @@ namespace iAkshar.Controllers
             {
                 if (!UserExists(id))
                 {
-                    return NotFound();
+                    return Common.Common.GenerateError("User Not Found");
                 }
                 else
                 {
-                    throw;
+                    return Common.Common.GenerateError(ex.Message);
                 }
             }
 
-            return NoContent();
+            return Common.Common.GenerateSuccResponse(user,"User updated successfully.");
         }
 
         private async Task<string> uploadFile(IFormFile? profileImage, int userId)
@@ -205,13 +212,14 @@ namespace iAkshar.Controllers
                 }
 
                 // Update the user's image path in the database
-                return Path.Combine("Image", uniqueFileName);
+                var imgPath = Path.Combine("Image", uniqueFileName);
+                return imgPath.Replace("\\", "/");
             }
             return "";
         }
 
         [HttpPost("ChangePassword/{id}")]
-        public async Task<IActionResult> ChangePassword(int id, string currentPassword, string newPassword)
+        public async Task<ActionResult<object>> ChangePassword(int id, string currentPassword, string newPassword)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.UserId == id);
 
@@ -221,7 +229,7 @@ namespace iAkshar.Controllers
             }
             else
             {
-                return BadRequest("Current Password is not match");
+                return Common.Common.GenerateError("Current Password is not match");
             }
             try
             {
@@ -229,16 +237,16 @@ namespace iAkshar.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message != null ? ex.Message : ex.InnerException?.Message);
+                return Common.Common.GenerateError(ex.Message ?? (ex.InnerException?.Message));
             }
 
-            return Ok("Password Change successfully");
+            return Common.Common.GenerateSuccResponse(null, "Password Change successfully");
         }
 
         // POST: api/User
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult> PostUser([FromForm] UserDto user, IFormFile? profileImage)
+        public async Task<object> PostUser([FromForm] UserDto user, IFormFile? profileImage)
         {
             try
             {
@@ -246,7 +254,7 @@ namespace iAkshar.Controllers
 
                 if (_context.Users == null)
                 {
-                    return Problem("Entity set 'AskharyatraContext.Users'  is null.");
+                    return Common.Common.GenerateError("User not found");
                 }
 
                 AksharUser entity = new AksharUser();
@@ -281,11 +289,11 @@ namespace iAkshar.Controllers
                 entity.ProfileImagePath = await uploadFile(profileImage, entity.UserId);
                 await _context.SaveChangesAsync();
 
-                return Ok("User Inserted.");
+                return Common.Common.GenerateSuccResponse(entity, "User Added Successfully");
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return Common.Common.GenerateError(ex.Message ?? (ex.InnerException?.Message));
             }
         }
 

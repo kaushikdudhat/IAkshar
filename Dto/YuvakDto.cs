@@ -29,5 +29,6 @@
         public DateTime? LastSabhaAttended { get; set; }
         public double Percentage { get; set; }
         public int SabhaId { get; set; }
+        public string ProfileImagePath { get; set; }
     }
 }

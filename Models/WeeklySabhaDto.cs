@@ -7,6 +7,8 @@
         public string MandalName { get; set; }
         public int SabhaTrackId { get; set; }
         public int TotalCount { get; set; }
-        public int PresentCount { get; set; }
+        public int PresentCount { get; set; }  
+        public int LastWeekPresentCount { get; set; } 
+        public int PresentCountDifference { get; set; }
     }
 }

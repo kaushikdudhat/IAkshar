@@ -1,4 +1,6 @@
-﻿namespace iAkshar
+﻿using iAkshar.Dto;
+
+namespace iAkshar
 {
     public static class CommonEnum
     {
@@ -11,5 +13,6 @@
             PradeshHead = 5
         }
 
+    
     }
 }

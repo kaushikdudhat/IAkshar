@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iAkshar.Models;
 using iAkshar.Dto;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace iAkshar.Controllers
 {
@@ -23,13 +24,14 @@ namespace iAkshar.Controllers
 
         // GET: api/Mandal
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Mandal>>> GetMandals()
+        public async Task<ActionResult<object>> GetMandals()
         {
             if (_context.Mandals == null)
             {
-                return NotFound();
+                return Common.Common.GenerateError("Mandal Not Found");
             }
-            return await _context.Mandals.ToListAsync();
+            var result = await _context.Mandals.ToListAsync();
+            return Common.Common.GenerateSuccResponse(result);
         }
 
         // GET: api/Mandal/5

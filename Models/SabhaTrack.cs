@@ -16,4 +16,6 @@ public partial class SabhaTrack
     public virtual ICollection<Attendence> Attendences { get; set; } = new List<Attendence>();
 
     public virtual Sabha? Sabha { get; set; }
+
+    public DateTime CreatedDate { get; set; }
 }

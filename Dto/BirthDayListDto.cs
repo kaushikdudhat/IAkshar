@@ -8,6 +8,9 @@
         public string Email { get; set; }
         public string Type { get; set; }
         public DateTime? BirthDate { get; set; }
+        public string ProfileImagePath { get; set; }
+        public string Sabha { get; set; }
+        public bool IsReggular { get; set; }
     }
 
     public class BirthDayCountDto
