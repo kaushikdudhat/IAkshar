@@ -190,7 +190,7 @@ namespace iAkshar.Controllers
 
         [Route("updateyuvakattendence")]
         [HttpPost]
-        public async Task<ActionResult<object>> PostYuvakAttendence([FromBody] List<YuvakAttendenceDto> yuvakAttendenceDtoList)
+        public async Task<ActionResult<object>> PostYuvakAttendence([FromBody] List<YuvakAttendenceReqDto> yuvakAttendenceDtoList)
         {
             try
             {

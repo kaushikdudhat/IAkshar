@@ -23,7 +23,8 @@ namespace iAkshar.Dto
         public string Sabha { get; set; }
         public string Type { get; set; }
         public string Mandal { get; set; }
-        public int Strength { get; set; }
+        public int Total { get; set; }
+        public int Attended { get; set; }
         public double PresentPer { get; set; }
         public int New { get; set; }
         public string Status { get; set; }

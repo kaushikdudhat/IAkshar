@@ -69,111 +69,76 @@ namespace iAkshar.Controllers
 
 
      
-        [HttpGet("WeeklySabha")]
-        public async Task<object> WeeklySabha()
+        [HttpGet("SabhaAttendance")]
+        public async Task<object> SabhaAttendance(int? sabhaId)
         {
             var currentDate = DateTime.Today;
-            var firstDateOf12thMonth = new DateTime(currentDate.Year, currentDate.Month, 1).AddMonths(-11);
+            var firstDateOf12thMonth = currentDate.AddMonths(-11).AddDays(-currentDate.Day + 1);
 
-            MonthlyReport data = new MonthlyReport();
+            var data = new MonthlyReport
+            {
+                TotalSabha = _context.Sabhas.Count(),
+                AvgStrength = _context.Users.Count() / Math.Max(_context.Sabhas.Count(), 1),  // Avoid divide by zero
+                SabhaList = new List<SabhaDetailReport>()
+            };
 
-            var sabhaList = _context.Sabhas.ToList();
-            data.TotalSabha = sabhaList.Count();
-            data.AvgStrength = _context.Users.Count();
-
-            var sabhatTrack = _context.SabhaTracks.Include(x => x.Sabha).ThenInclude(x => x.Mandal).Include(x => x.Sabha.Sabhatype).Where(x => x.Date >= firstDateOf12thMonth).ToList();
-
-            data.SabhaList = new List<SabhaDetailReport>();
-
-            int lastSabhaAttendedCount = 0;
             try
             {
+                var sabhaTracks = _context.SabhaTracks
+                    .Include(x => x.Sabha)
+                        .ThenInclude(x => x.Mandal)
+                    .Include(x => x.Sabha.Sabhatype)
+                    .Where(x => (sabhaId==null || x.Sabhaid== sabhaId) && x.Date >= firstDateOf12thMonth)
+                    .ToList();
 
-                for (int i = 0; i < sabhatTrack.Count; i++)
+                var sabhaTrackIds = sabhaTracks.Select(x => x.Sabhatrackid).ToList();
+                var allAttendances = _context.Attendences
+                    .Where(x => sabhaTrackIds.Contains(x.Sabhatrackid.Value))
+                    .ToList();
+                int lastSabhaAttendedCount = 0;
+                int? lastSabhaId = 0;
+                foreach (var track in sabhaTracks)
                 {
-                    var sabhaYuvaks = _context.Attendences.Where(x => x.Sabhatrackid == sabhatTrack[i].Sabhatrackid).ToList();
+                    var sabhaYuvaks = allAttendances
+                        .Where(x => x.Sabhatrackid == track.Sabhatrackid)
+                        .ToList();
 
-                    int newJoined = _context.Users.Where(x => x.JoiningDate !=null &&  x.JoiningDate <= sabhatTrack[i].Date && x.JoiningDate >= sabhatTrack[i].Date.Value.AddDays(-7) && x.Sabhaid == sabhatTrack[i].Sabhaid).Count();
+                    int attended = sabhaYuvaks.Count(x => x.Ispresent.Value);
+                    int newJoined = _context.Users.Count(x =>
+                        x.JoiningDate != null &&
+                        x.JoiningDate <= track.Date &&
+                        x.JoiningDate >= track.Date.Value.AddDays(-7) &&
+                        x.Sabhaid == track.Sabhaid
+                    );
 
-                    int attended = sabhaYuvaks.Where(x => x.Ispresent == true).Count();
-                    data.SabhaList.Add(new SabhaDetailReport()
+
+                    if (lastSabhaId != track.Sabhaid)
+                        lastSabhaAttendedCount = 0;
+
+                    data.SabhaList.Add(new SabhaDetailReport
                     {
-                        Date = sabhatTrack[i].Date,
-                        Sabha = sabhatTrack[i].Sabha.Sabhaname,
-                        Mandal = sabhatTrack[i].Sabha.Mandal.Mandalname,
-                        Type = sabhatTrack[i].Sabha.Sabhatype?.Sabhatype1,
-                        Strength = attended,
+                        Date = track.Date,
+                        Sabha = track.Sabha.Sabhaname,
+                        Mandal = track.Sabha.Mandal.Mandalname,
+                        Type = track.Sabha.Sabhatype?.Sabhatype1,
+                        Total = sabhaYuvaks.Count,
+                        Attended = attended,
                         Change = attended - lastSabhaAttendedCount,
                         PresentPer = sabhaYuvaks.Count > 0 ? (attended * 100) / sabhaYuvaks.Count : 0,
                         New = newJoined,
-                        Status = attended == 0 ? "Done" : "Pending"
+                        Status = attended == 0 ? "Pending" : "Done"
                     });
-                    lastSabhaAttendedCount = attended;
-                }
 
-                var sabhaTrackIds = sabhatTrack.Select(x => x.Sabhatrackid).ToList();
-                var attendance = _context.Attendences.Where(x => sabhaTrackIds.Contains(x.Sabhatrackid.Value)).ToList();
-                data.AvgStrength = attendance.Where(x => x.Ispresent == true).Count();
+                    lastSabhaAttendedCount = attended;
+                    lastSabhaId = track.Sabhaid;
+
+                }
             }
             catch (Exception ex)
             {
-
-                throw;
+                return Common.Common.GenerateError(ex.Message);
             }
-            return Common.Common.GenerateSuccResponse(data);
-        }
 
-
-        [HttpGet("MonthlySabha")]
-        public async Task<object> MonthlySabha()
-        {
-            var currentDate = DateTime.Today;
-            var firstDateOf12thMonth = new DateTime(currentDate.Year, currentDate.Month, 1).AddMonths(-11);
-
-            MonthlyReport data = new MonthlyReport();
-
-            var sabhaList = _context.Sabhas.ToList();
-            data.TotalSabha = sabhaList.Count();
-            data.AvgStrength = _context.Users.Count();
-
-            var sabhatTrack = _context.SabhaTracks.Include(x => x.Sabha).ThenInclude(x => x.Mandal).Include(x => x.Sabha.Sabhatype).Where(x => x.Date >= firstDateOf12thMonth).ToList();
-
-            data.SabhaList = new List<SabhaDetailReport>();
-
-            int lastSabhaAttendedCount = 0;
-            try
-            {
-
-                for (int i = 0; i < sabhatTrack.Count; i++)
-                {
-                    var sabhaYuvaks = _context.Attendences.Where(x => x.Sabhatrackid == sabhatTrack[i].Sabhatrackid).ToList();
-
-                    int newJoined = _context.Users.Where(x => x.JoiningDate != null && x.JoiningDate <= sabhatTrack[i].Date && x.JoiningDate >= sabhatTrack[i].Date.Value.AddDays(-7) && x.Sabhaid == sabhatTrack[i].Sabhaid).Count();
-
-                    int attended = sabhaYuvaks.Where(x => x.Ispresent == true).Count();
-                    data.SabhaList.Add(new SabhaDetailReport()
-                    {
-                        Date = sabhatTrack[i].Date,
-                        Sabha = sabhatTrack[i].Sabha.Sabhaname,
-                        Mandal = sabhatTrack[i].Sabha.Mandal.Mandalname,
-                        Type = sabhatTrack[i].Sabha.Sabhatype?.Sabhatype1,
-                        Strength = attended,
-                        Change = attended - lastSabhaAttendedCount,
-                        PresentPer = sabhaYuvaks.Count > 0 ? (attended * 100) / sabhaYuvaks.Count : 0,
-                        New = newJoined,
-                        Status = attended == 0 ? "Done" : "Pending"
-                    });
-                    lastSabhaAttendedCount = attended;
-                }
-
-                var sabhaTrackIds = sabhatTrack.Select(x => x.Sabhatrackid).ToList();
-                var attendance = _context.Attendences.Where(x => sabhaTrackIds.Contains(x.Sabhatrackid.Value)).ToList();
-                data.AvgStrength = attendance.Where(x => x.Ispresent == true).Count();
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
             return Common.Common.GenerateSuccResponse(data);
         }
     }

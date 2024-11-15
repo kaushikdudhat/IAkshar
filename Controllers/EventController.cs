@@ -71,7 +71,7 @@ namespace iAkshar.Controllers
                     commandType: CommandType.StoredProcedure);
 
                 // Return the result as a list
-             
+
                 return Common.Common.GenerateSuccResponse(result);
             }
             catch (Exception e)
@@ -316,13 +316,21 @@ namespace iAkshar.Controllers
 
         [Route("GetYuvakList")]
         [HttpGet]
-        public async Task<ActionResult<object>> GetYuvakList(int followupById, int sabhaId, bool IsMarried, bool isAttending,bool isIrregular, bool isKaryakarta, bool IsAmbrish)
+        public async Task<ActionResult<object>> GetYuvakList(int followupById, int? sabhaId, bool? IsMarried, bool? isAttending, bool? isIrregular, bool? isKaryakarta, bool? IsAmbrish)
         {
             try
             {
                 // Assuming _dbConnection is your existing DbConnection object
                 var parameters = new DynamicParameters();
                 parameters.Add("@followupById", followupById);
+                if (IsAmbrish.HasValue)
+                    parameters.Add("@isAmbrish", IsAmbrish);
+                if (isKaryakarta.HasValue)
+                    parameters.Add("@isKaryakarta", isKaryakarta);
+                if (sabhaId.HasValue)
+                    parameters.Add("@sabhaId", sabhaId);
+                if (IsMarried.HasValue)
+                    parameters.Add("@isMarried", IsMarried);
 
                 var query = await _dbConnection.QueryAsync<YuvakDto>(
                     "GetYuvakListByFollowupBy",
