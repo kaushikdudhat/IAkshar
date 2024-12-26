@@ -10,12 +10,27 @@ namespace iAkshar.Common
             string type = "";
             if (user.Iskaryakarta == true)
             {
-                type = "Karyakarta";
+                type = "K";
 
             }
             if (user.IsAmbrish == true)
             {
-                type = type + " " + "Ambrish";
+                type = type + " " + "A";
+            }
+            return type;
+        }
+
+        public static string GetYuvakType(YuvakDto user)
+        {
+            string type = "";
+            if (user.Iskaryakarta == true)
+            {
+                type = "K";
+
+            }
+            if (user.IsAmbrish == true)
+            {
+                type = type + " " + "A";
             }
             return type;
         }

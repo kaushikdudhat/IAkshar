@@ -2,9 +2,7 @@
 using iAkshar.Dto;
 using iAkshar.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Data;
-using System.Linq;
 
 namespace iAkshar.Controllers
 {
@@ -191,6 +189,7 @@ namespace iAkshar.Controllers
                 var parameters = new DynamicParameters();
                 parameters.Add("@UserId", userId, DbType.Int32);
                 parameters.Add("@SabhaId", sabhaId, DbType.Int32);
+                parameters.Add("@isCount", false, DbType.Boolean);
 
                 // Stored procedure name
                 string storedProc = "GetYuvakListBySabhaId";
@@ -279,6 +278,8 @@ namespace iAkshar.Controllers
                     commandType: CommandType.StoredProcedure
                 );
 
+                query.Type = Common.Common.GetYuvakType(query);
+
                 return Common.Common.GenerateSuccResponse(query);
             }
             catch (Exception e)
@@ -298,13 +299,18 @@ namespace iAkshar.Controllers
                 var parameters = new DynamicParameters();
                 parameters.Add("@followupById", followupById);
 
-                var query = await _dbConnection.QueryAsync<YuvakDto>(
+                IEnumerable<YuvakDto> query = await _dbConnection.QueryAsync<YuvakDto>(
                     "GetYuvakListByFollowupBy",
                     parameters,
                     commandType: CommandType.StoredProcedure
                 );
 
-                //return query != null ? Ok(query) : NotFound();
+
+                foreach (var item in query)
+                {
+                    item.Type = Common.Common.GetYuvakType(item);
+                }
+
                 return Common.Common.GenerateSuccResponse(query);
             }
             catch (Exception e)
@@ -316,7 +322,16 @@ namespace iAkshar.Controllers
 
         [Route("GetYuvakList")]
         [HttpGet]
-        public async Task<ActionResult<object>> GetYuvakList(int followupById, int? sabhaId, bool? IsMarried, bool? isAttending, bool? isIrregular, bool? isKaryakarta, bool? IsAmbrish)
+        public async Task<ActionResult<object>> GetYuvakList(int followupById,
+                                                             string? sabhaId,
+                                                             string? mandalId,
+                                                             bool? IsMarried,
+                                                             bool? isAttending,
+                                                             bool? isIrregular,
+                                                             bool? isKaryakarta,
+                                                             bool? IsAmbrish,
+                                                             string? BloodGroups,
+                                                             string? age)
         {
             try
             {
@@ -327,11 +342,25 @@ namespace iAkshar.Controllers
                     parameters.Add("@isAmbrish", IsAmbrish);
                 if (isKaryakarta.HasValue)
                     parameters.Add("@isKaryakarta", isKaryakarta);
-                if (sabhaId.HasValue)
+                if (!string.IsNullOrEmpty(sabhaId))
                     parameters.Add("@sabhaId", sabhaId);
                 if (IsMarried.HasValue)
                     parameters.Add("@isMarried", IsMarried);
+                if (!string.IsNullOrEmpty(mandalId))
+                    parameters.Add("@mandalId", mandalId);
+                if (!string.IsNullOrEmpty(BloodGroups))
+                    parameters.Add("@bloodGroups", BloodGroups);
 
+                if (!string.IsNullOrEmpty(age))
+                {
+                    string? fromAge = age.Split("-")?[0]?.Trim();
+                    string? toAge = age.Split("-")?[1]?.Trim();
+
+                    if (!string.IsNullOrEmpty(fromAge))
+                        parameters.Add("@fromAge", fromAge);
+                    if (!string.IsNullOrEmpty(toAge))
+                        parameters.Add("@toAge", toAge);
+                }
                 var query = await _dbConnection.QueryAsync<YuvakDto>(
                     "GetYuvakListByFollowupBy",
                     parameters,

@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iAkshar.Models;
 using iAkshar.Dto;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Dapper;
+using System.Data;
 
 namespace iAkshar.Controllers
 {
@@ -16,10 +13,12 @@ namespace iAkshar.Controllers
     public class SabhaController : ControllerBase
     {
         private readonly AskharyatraContext _context;
+        private readonly IDbConnection _dbConnection;
 
-        public SabhaController(AskharyatraContext context)
+        public SabhaController(AskharyatraContext context, IDbConnection dbConnection)
         {
             _context = context;
+            _dbConnection = dbConnection;
         }
 
         // GET: api/Sabha
@@ -130,6 +129,62 @@ namespace iAkshar.Controllers
         private bool SabhaExists(int id)
         {
             return (_context.Sabhas?.Any(e => e.Sabhaid == id)).GetValueOrDefault();
+        }
+
+        [Route("GetSabhaListByUserId")]
+        [HttpGet]
+        public async Task<ActionResult<object>> GetSabhaListByUserId(int userid)
+        {
+            try
+            {
+                // Assuming _dbConnection is your existing DbConnection object
+                var parameters = new DynamicParameters();
+                parameters.Add("@userId", userid);
+
+                IEnumerable<SabhaDDDto> query = await _dbConnection.QueryAsync<SabhaDDDto>(
+                    "GetSabhaListByUserId",
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                );
+                 
+
+                return Common.Common.GenerateSuccResponse(query);
+            }
+            catch (Exception e)
+            {
+                // Handle exception
+                return Common.Common.GenerateError(e.Message);
+            }
+        }
+
+        [Route("getYuvakCountbyFollowupId/{userId}")]
+        [HttpGet]
+        public async Task<ActionResult<object>> getYuvakCountbyFollowupId(int userId, int sabhaId)
+        {
+            try
+            {
+                // Prepare the parameters for the stored procedure
+                var parameters = new DynamicParameters();
+                parameters.Add("@UserId", userId, DbType.Int32);
+                parameters.Add("@SabhaId", sabhaId, DbType.Int32);
+                parameters.Add("@isCount", true, DbType.Boolean);
+
+                // Stored procedure name
+                string storedProc = "GetYuvakListBySabhaId";
+
+                // Execute the stored procedure using Dapper
+                var count = (await _dbConnection.QueryAsync<YuvakCountDto>(
+                    storedProc,
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                )).ToList();
+
+                return Common.Common.GenerateSuccResponse(count);
+            }
+            catch (Exception e)
+            {
+                return Common.Common.GenerateError(e.Message);
+            }
         }
     }
 }

@@ -1,5 +1,10 @@
 ﻿namespace iAkshar.Dto
 {
+    public class YuvakCountDto
+    {
+        public int YuvakCount { get; set; }
+    }
+
     public class EventYuvakDto
     {
         public string YuvakName { get; set; }

@@ -124,80 +124,83 @@ namespace iAkshar.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<object>> GetUser(int id)
         {
-            //try
-            //{
-            if (_context.Users == null)
+            AksharUserDto yuvakData = new AksharUserDto();
+            try
             {
-                return Common.Common.GenerateError("User Not Found");
+                if (_context.Users == null)
+                {
+                    return Common.Common.GenerateError("User Not Found");
+                }
+                var user = await _context.Users.Where(x => x.UserId == id).Include(x => x.Sabha).ThenInclude(x => x.Mandal).FirstOrDefaultAsync();
+
+                if (user == null)
+                {
+                    return Common.Common.GenerateError("User Not Found");
+                }
+
+                yuvakData = new AksharUserDto()
+                {
+                    Address = user.Address,
+                    BirthDate = user.BirthDate,
+                    Emailid = user.Emailid,
+                    Firstname = user.Firstname,
+                    Followupby = user.Followupby,
+                    Bloodgroup = user.Bloodgroup,
+                    Education = user.Education,
+                    Educationstatus = user.Educationstatus,
+                    Gender = user.Gender,
+                    IsAmbrish = user.IsAmbrish,
+                    Isattending = user.Isattending,
+                    Isirregular = user.Isirregular,
+                    Iskaryakarta = user.Iskaryakarta,
+                    Ispresent = user.Ispresent,
+                    JoiningDate = user.JoiningDate,
+                    Lastname = user.Lastname,
+                    Maritalstatus = user.Maritalstatus,
+                    Middlename = user.Middlename,
+                    Mobile = user.Mobile,
+                    ProfileImagePath = user.ProfileImagePath,
+                    Pincode = user.Pincode,
+                    Referenceby = user.Referenceby,
+                    Roleid = user.Roleid,
+                    Sabhaid = user.Sabhaid,
+                    UserId = user.UserId,
+                    SabhaName = user?.Sabha?.Sabhaname,
+                    MandalName = user?.Sabha?.Mandal?.Mandalname
+                };
+
+                var followupYuvakObject = _context.Users.FirstOrDefault(x => x.UserId == user.Followupby);
+                yuvakData.FollowupName = followupYuvakObject?.Firstname + " " + followupYuvakObject?.Lastname;
+
+                var referenceByupYuvakObject = _context.Users.FirstOrDefault(x => x.UserId == user.Referenceby);
+                if (referenceByupYuvakObject != null)
+                {
+                    yuvakData.ReferenceName = referenceByupYuvakObject?.Firstname + " " + referenceByupYuvakObject?.Lastname;
+                }
+
+                var attendence = _context.Attendences.Where(x => x.Userid == id).OrderByDescending(x => x.Sabhatrackid).FirstOrDefault();
+                if (attendence != null)
+                {
+                    yuvakData.LastSabhaAttended = _context.SabhaTracks.Where(x => x.Sabhatrackid == attendence.Sabhatrackid).Select(x => x.Date).FirstOrDefault(); ;
+                }
+
+                var totalAttendences = _context.Attendences.Where(x => x.Userid == id);
+                if (totalAttendences.Count() > 0)
+                {
+                    var attended = totalAttendences.Where(x => x.Ispresent == true).Count();
+                    yuvakData.Percentage = Math.Round((double)attended / totalAttendences.Count() * 100, 2);
+                }
             }
-            var user = await _context.Users.FindAsync(id);
-
-            if (user == null)
+            catch (Exception ex)
             {
-                return Common.Common.GenerateError("User Not Found");
+                return Common.Common.GenerateError(ex.Message);
+
             }
-
-            AksharUserDto yuvakData = new AksharUserDto()
-            {
-                Address= user.Address,
-                BirthDate= user.BirthDate,
-                Emailid= user.Emailid,
-                Firstname = user.Firstname,
-                Followupby = user.Followupby,
-                Bloodgroup = user.Bloodgroup,
-                Education= user.Education,
-                Educationstatus= user.Educationstatus,
-                Gender= user.Gender,
-                IsAmbrish = user.IsAmbrish,
-                Isattending= user.Isattending,
-                Isirregular= user.Isirregular,
-                Iskaryakarta= user.Iskaryakarta,
-                Ispresent= user.Ispresent,
-                JoiningDate= user.JoiningDate,
-                Lastname= user.Lastname,
-                Maritalstatus= user.Maritalstatus,
-                Middlename= user.Middlename,
-                Mobile= user.Mobile,
-                ProfileImagePath= user.ProfileImagePath,
-                Pincode= user.Pincode,
-                Referenceby= user.Referenceby,
-                Roleid = user.Roleid,
-                Sabhaid = user.Sabhaid,
-                UserId= user.UserId
-            };
-
-            var followupYuvakObject = _context.Users.FirstOrDefault(x => x.UserId == user.Followupby);
-            yuvakData.FollowupName = followupYuvakObject?.Firstname + " " + followupYuvakObject?.Lastname;
-
-            var referenceByupYuvakObject = _context.Users.FirstOrDefault(x => x.UserId == user.Referenceby);
-            if (referenceByupYuvakObject != null)
-            {
-                yuvakData.ReferenceName = referenceByupYuvakObject?.Firstname + " " + referenceByupYuvakObject?.Lastname;
-            }
-
-            var attendence = _context.Attendences.Where(x => x.Userid == id).OrderByDescending(x => x.Sabhatrackid).FirstOrDefault();
-            if (attendence != null)
-            {
-                yuvakData.LastSabhaAttended = _context.SabhaTracks.Where(x => x.Sabhatrackid == attendence.Sabhatrackid).Select(x => x.Date).FirstOrDefault(); ;
-            }
-
-            var totalAttendences = _context.Attendences.Where(x => x.Userid == id);
-            if (totalAttendences.Count() > 0)
-            {
-                var attended = totalAttendences.Where(x => x.Ispresent == true).Count();
-                yuvakData.Percentage = Math.Round((double)attended / totalAttendences.Count() * 100, 2);
-            }
-            //catch (Exception ex)
-            //{
-
-            //    return new AksharUser();
-            //}
 
             return Common.Common.GenerateSuccResponse(yuvakData);
         }
 
-        // PUT: api/User/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+
         [HttpPost("ChangeUser/{id}")]
         public async Task<object> ChangeUser(int id, [FromForm] AksharUSerDto userDto, IFormFile? profileImage)
         {
@@ -210,6 +213,19 @@ namespace iAkshar.Controllers
 
             try
             {
+
+                if (user.Mobile != userDto.Mobile)
+                {
+                    var mobExist = _context.Users.Include(x => x.Sabha).ThenInclude(x => x.Mandal).FirstOrDefault(x => x.Mobile == userDto.Mobile);
+                    if (mobExist != null)
+                    {
+                        return Common.Common.GenerateError("Mobile Number is already existing with User Id : " + mobExist?.UserId +
+                          ", User Name: " + mobExist?.Firstname + " " + mobExist?.Lastname +
+                          ", Sabha Name : " + mobExist?.Sabha?.Sabhaname +
+                          ", Mandal Name: " + mobExist?.Sabha?.Mandal?.Mandalname);
+                    }
+
+                }
                 user.Firstname = userDto.Firstname;
                 user.Middlename = userDto.Middlename;
                 user.Lastname = userDto.Lastname;
@@ -275,7 +291,9 @@ namespace iAkshar.Controllers
 
                 // Update the user's image path in the database
                 var imgPath = Path.Combine("Image", uniqueFileName);
-                return imgPath.Replace("\\", "/");
+                return "https://surat.aksharyatra.in/" + imgPath.Replace("\\", "/");
+
+
             }
             return "";
         }
@@ -313,9 +331,14 @@ namespace iAkshar.Controllers
             try
             {
 
-                if (_context.Users == null)
+
+                var mobExist = _context.Users.Include(x => x.Sabha).ThenInclude(x => x.Mandal).FirstOrDefault(x => x.Mobile == user.Mobile);
+                if (mobExist != null)
                 {
-                    return Common.Common.GenerateError("User not found");
+                    return Common.Common.GenerateError("Mobile Number is already existing with User Id : " + mobExist?.UserId +
+                      ", User Name: " + mobExist?.Firstname + " " + mobExist?.Lastname +
+                      ", Sabha Name : " + mobExist?.Sabha?.Sabhaname +
+                      ", Mandal Name: " + mobExist?.Sabha?.Mandal?.Mandalname);
                 }
 
                 AksharUser entity = new AksharUser();

@@ -552,7 +552,7 @@ namespace iAkshar.Controllers
                 var absentData = (from au in query
                                   join st in _context.SabhaTracks on au.Sabhaid equals st.Sabhaid
                                   join att in _context.Attendences on new { x1 = st.Sabhatrackid, x2 = au.UserId } equals new { x1 = att.Sabhatrackid.Value, x2 = att.Userid.Value }
-                                  where att.Ispresent == false
+                                  where att.Ispresent == false && st.Date< DateTime.Now
                                   group au by au.UserId into g
                                   select new
                                   {
@@ -576,7 +576,7 @@ namespace iAkshar.Controllers
                     return Common.Common.GenerateSuccResponse(res);
                 }
 
-                return Common.Common.GenerateSuccResponse(new UserDetailDto());
+                return Common.Common.GenerateSuccResponse(new List<string>(),"No Data Found");
             }
             catch (Exception e)
             {
@@ -642,7 +642,7 @@ namespace iAkshar.Controllers
                 var absentData = (from au in query
                                   join st in _context.SabhaTracks on au.Sabhaid equals st.Sabhaid
                                   join att in _context.Attendences on new { x1 = st.Sabhatrackid, x2 = au.UserId } equals new { x1 = att.Sabhatrackid.Value, x2 = att.Userid.Value }
-                                  where att.Ispresent == false
+                                  where att.Ispresent == false && st.Date < DateTime.Now
                                   group au by au.UserId into g
                                   select new
                                   {

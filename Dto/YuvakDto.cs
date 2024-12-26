@@ -29,6 +29,21 @@
         public DateTime? LastSabhaAttended { get; set; }
         public double Percentage { get; set; }
         public int SabhaId { get; set; }
+        public int RoleId { get; set; }
         public string ProfileImagePath { get; set; }
+        public string Type { get; set; }
+        public bool? IsAmbrish { get; set; }
+
+        public string SabhaName { get; set; }
+        public string MandalName { get; set; }
+        public string FollowupMob { get; set; }
+        public string RefMob { get; set; }
+    }
+
+    public class SabhaDDDto
+    {
+        public int SabhaId { get; set; }
+        public string SabhaName { get; set; }
+
     }
 }

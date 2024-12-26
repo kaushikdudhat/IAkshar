@@ -54,6 +54,8 @@ namespace iAkshar.Dto
         public double? Percentage { get; set; }
         public string FollowupName { get; set; }
         public string ReferenceName { get; set; }
+        public string SabhaName { get; set; }
+        public string MandalName { get; set; }
 
     }
 }

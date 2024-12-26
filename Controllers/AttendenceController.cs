@@ -98,7 +98,7 @@ namespace iAkshar.Controllers
                 var data = await (from u in _context.Users
                                   join st in _context.SabhaTracks on u.Sabhaid equals st.Sabhaid
                                   join a in _context.Attendences on st.Sabhatrackid equals a.Sabhatrackid
-                                  where u.UserId == 13447 && a.Userid == 13447
+                                  where u.UserId == userId && a.Userid == userId
                                   select new
                                   {
                                       YuvakId = u.UserId,
